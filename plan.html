@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>German Insurance & Residency Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Neutrals - Slate, Sky, Amber -->
+    <!-- Application Structure Plan: A single-page dashboard structure was chosen to address the user's stressful and confusing situation. A linear document would be overwhelming. This design breaks the problem into logical, digestible sections: 1. Overview (to confirm the situation), 2. Immediate Goals (to prioritize), 3. The "Why" (to reduce confusion), 4. A Step-by-Step Action Plan (the core interactive element), and 5. A Visual Cost Comparison. This task-oriented flow empowers the user by providing clarity and a sense of control, guiding them from understanding to action. Navigation is handled by a sticky header for easy access to each section. -->
+    <!-- Visualization & Content Choices: The information is a personal problem, not a dataset. Therefore, presentation choices focus on clarity and actionability. Goal: Organize timeline -> Presentation: HTML/CSS timeline -> Interaction: Static visual -> Justification: Quickly grounds the user in the sequence of events. Goal: Prioritize tasks -> Presentation: Icon-driven key goal cards -> Interaction: Static visual -> Justification: Immediately highlights the two most urgent issues. Goal: Compare costs -> Viz: Doughnut Chart (Chart.js) -> Interaction: Hover for tooltips -> Justification: Visually reinforces the financial motivation for switching insurance, making the problem tangible. Goal: Guide action -> Presentation: Interactive checklist cards -> Interaction: Click to mark as complete -> Justification: Breaks down a complex process into manageable steps, creating a sense of progress and reducing overwhelm. All elements are built to be responsive and clear. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        html[lang="ar"] body {
+            font-family: 'Cairo', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        .step-card.completed {
+            border-color: #059669; /* emerald-600 */
+            background-color: #f0fdf4; /* emerald-50 */
+        }
+        .step-card.completed .step-number {
+            background-color: #059669; /* emerald-600 */
+            color: white;
+        }
+        .step-card.completed .completion-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .completion-check {
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.3s ease-in-out;
+        }
+        .lang-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid transparent;
+            transition: all 0.2s ease-in-out;
+            font-weight: 500;
+        }
+        .lang-btn.active {
+            background-color: #e0f2fe; /* sky-100 */
+            color: #0c4a6e; /* sky-900 */
+            border-color: #7dd3fc; /* sky-300 */
+        }
+        .lang-btn:not(.active) {
+            background-color: #f1f5f9; /* slate-100 */
+            color: #475569; /* slate-600 */
+        }
+        html[dir="rtl"] .timeline {
+            border-left-width: 0;
+            border-right-width: 2px;
+            padding-left: 0;
+            padding-right: 1.5rem;
+        }
+        html[dir="rtl"] .timeline-dot {
+            left: auto;
+            right: -0.5rem;
+        }
+         html[dir="rtl"] .step-card-content {
+            margin-left: 0;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <header class="text-center mb-8">
+            <div class="flex justify-center mb-6">
+                <div id="languageSelector" class="flex space-x-2 bg-slate-200 p-1 rounded-lg">
+                    <button class="lang-btn" data-lang="en">English</button>
+                    <button class="lang-btn" data-lang="de">Deutsch</button>
+                    <button class="lang-btn" data-lang="ar">العربية</button>
+                </div>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900" data-translate-key="mainTitle">Navigating Your Health Insurance & Residency Situation</h1>
+            <p class="mt-2 text-lg text-slate-600" data-translate-key="mainSubtitle">An interactive guide to solve your current challenges in Germany.</p>
+        </header>
+
+        <nav class="sticky top-0 bg-white/80 backdrop-blur-md z-10 shadow-sm rounded-lg mb-8">
+            <div class="max-w-5xl mx-auto px-4">
+                <div class="flex items-center justify-center h-16 space-x-4 sm:space-x-8 text-sm sm:text-base">
+                    <a href="#overview" class="nav-link text-slate-600 hover:text-sky-600 font-medium transition-colors" data-translate-key="navOverview">Overview</a>
+                    <a href="#action-plan" class="nav-link text-slate-600 hover:text-sky-600 font-medium transition-colors" data-translate-key="navActionPlan">Action Plan</a>
+                    <a href="#explanation" class="nav-link text-slate-600 hover:text-sky-600 font-medium transition-colors" data-translate-key="navExplanation">Why This Happened</a>
+                    <a href="#costs" class="nav-link text-slate-600 hover:text-sky-600 font-medium transition-colors" data-translate-key="navCosts">Cost Comparison</a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="space-y-12">
+
+            <section id="overview" class="scroll-mt-24">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4" data-translate-key="overviewTitle">Situation Overview</h2>
+                    <p class="mb-6 text-slate-600" data-translate-key="overviewSubtitle">This timeline summarizes the recent events that led to the current situation. Understanding the sequence is the first step to resolving it.</p>
+                    <div class="relative pl-6 border-l-2 border-sky-300 timeline">
+                        <!-- Event 1 -->
+                        <div class="mb-8">
+                            <div class="absolute w-4 h-4 bg-sky-500 rounded-full -left-2 timeline-dot"></div>
+                            <p class="font-semibold text-sky-800" data-translate-key="event1Title">Private Insurance</p>
+                            <p class="text-slate-600" data-translate-key="event1Desc">You were correctly insured with Care Concept as a student in a preparatory course (FSP).</p>
+                        </div>
+                        <!-- Event 2 -->
+                        <div class="mb-8">
+                            <div class="absolute w-4 h-4 bg-sky-500 rounded-full -left-2 timeline-dot"></div>
+                            <p class="font-semibold text-sky-800" data-translate-key="event2Title">Part-Time Job Started</p>
+                            <p class="text-slate-600" data-translate-key="event2Desc">Your new part-time job (20 hrs/week) legally requires social security contributions, which triggers mandatory public health insurance.</p>
+                        </div>
+                        <!-- Event 3 -->
+                        <div class="mb-8">
+                            <div class="absolute w-4 h-4 bg-amber-500 rounded-full -left-2 timeline-dot"></div>
+                            <p class="font-semibold text-amber-800" data-translate-key="event3Title">Employer Registered You in AOK</p>
+                            <p class="text-slate-600" data-translate-key="event3Desc">Your employer fulfilled their legal duty by registering you with a public health insurer (AOK).</p>
+                        </div>
+                         <!-- Event 4 -->
+                        <div class="mb-8">
+                            <div class="absolute w-4 h-4 bg-amber-500 rounded-full -left-2 timeline-dot"></div>
+                            <p class="font-semibold text-amber-800" data-translate-key="event4Title">Cancelled Private Insurance</p>
+                            <p class="text-slate-600" data-translate-key="event4Desc">Following advice, you cancelled your Care Concept policy. This is a critical point.</p>
+                        </div>
+                        <!-- Event 5 -->
+                        <div class="mb-0">
+                            <div class="absolute w-4 h-4 bg-red-500 rounded-full -left-2 timeline-dot"></div>
+                            <p class="font-semibold text-red-800" data-translate-key="event5Title">Job Ends & AOK Becomes Voluntary</p>
+                            <p class="text-slate-600" data-translate-key="event5Desc">With the job ending, your mandatory public insurance converts to a more expensive "voluntary" membership, leading to the current problem.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="action-plan" class="scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-4 text-center" data-translate-key="planTitle">Your Step-by-Step Action Plan</h2>
+                <p class="max-w-3xl mx-auto text-center text-slate-600 mb-8" data-translate-key="planSubtitle">This is the most important section. Follow these steps in order. This is a complex situation, and acting quickly and correctly is key. Click on a step to mark it as complete.</p>
+
+                <div class="space-y-4">
+                    <!-- Step 1 -->
+                    <div class="step-card bg-white p-5 rounded-lg shadow-md border-2 border-transparent cursor-pointer transition-all duration-300">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="step-number w-10 h-10 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold text-lg transition-colors">1</div>
+                            </div>
+                            <div class="ml-4 flex-grow step-card-content">
+                                <h3 class="text-lg font-semibold text-slate-800" data-translate-key="step1Title">IMMEDIATELY Contact AOK</h3>
+                                <p class="text-slate-600 mt-1" data-translate-key="step1Desc">This is your highest priority. You need to find out if you are actually registered. The employer might have started the process without completing it.</p>
+                                <ul class="list-disc list-inside mt-2 text-slate-600 space-y-1">
+                                    <li data-translate-key="step1li1"><strong>Call or visit an AOK branch in Magdeburg.</strong> Explain your situation: you believe your employer registered you but you never provided information or received documents.</li>
+                                    <li data-translate-key="step1li2"><strong>Ask for your status:</strong> Are you an active member? Since when?</li>
+                                    <li data-translate-key="step1li3"><strong>Explain the job is ending immediately.</strong> This is crucial information for them.</li>
+                                </ul>
+                            </div>
+                            <div class="completion-check ml-4">
+                                <span class="text-3xl text-emerald-600">✓</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="step-card bg-white p-5 rounded-lg shadow-md border-2 border-transparent cursor-pointer transition-all duration-300">
+                        <div class="flex items-start">
+                             <div class="flex-shrink-0">
+                                <div class="step-number w-10 h-10 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold text-lg transition-colors">2</div>
+                            </div>
+                            <div class="ml-4 flex-grow step-card-content">
+                                <h3 class="text-lg font-semibold text-slate-800" data-translate-key="step2Title">Get Proof of Employment End</h3>
+                                <p class="text-slate-600 mt-1" data-translate-key="step2Desc">You need official proof from your employer that the employment relationship is ending. This document is your key to changing your insurance status.</p>
+                                 <ul class="list-disc list-inside mt-2 text-slate-600 space-y-1">
+                                    <li data-translate-key="step2li1">Request a formal termination letter (`Kündigung`) or a contract termination agreement (`Aufhebungsvertrag`).</li>
+                                    <li data-translate-key="step2li2">It must clearly state the last day of employment. Since the business is closing, this should be straightforward.</li>
+                                    <li data-translate-key="step2li3">A written statement from him confirming the business closure and the end of your employment on a specific date is essential.</li>
+                                </ul>
+                            </div>
+                             <div class="completion-check ml-4">
+                                <span class="text-3xl text-emerald-600">✓</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="step-card bg-white p-5 rounded-lg shadow-md border-2 border-transparent cursor-pointer transition-all duration-300">
+                        <div class="flex items-start">
+                             <div class="flex-shrink-0">
+                                <div class="step-number w-10 h-10 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold text-lg transition-colors">3</div>
+                            </div>
+                            <div class="ml-4 flex-grow step-card-content">
+                                <h3 class="text-lg font-semibold text-slate-800" data-translate-key="step3Title">Attempt to Cancel AOK Membership</h3>
+                                <p class="text-slate-600 mt-1" data-translate-key="step3Desc">Once you have proof the job ended, immediately inform AOK. Your goal is to get out of the "voluntary" membership before it really starts.</p>
+                                <ul class="list-disc list-inside mt-2 text-slate-600 space-y-1">
+                                    <li data-translate-key="step3li1">Provide AOK with the proof of employment ending.</li>
+                                    <li data-translate-key="step3li2">State that you are a student in a preparatory course and wish to return to private insurance, as you are no longer eligible for mandatory public insurance.</li>
+                                    <li data-translate-key="step3li3">There is a special, short-term right to cancel when mandatory insurance ends. Act within two weeks of receiving confirmation from AOK about the status change.</li>
+                                </ul>
+                            </div>
+                             <div class="completion-check ml-4">
+                                <span class="text-3xl text-emerald-600">✓</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4 -->
+                    <div class="step-card bg-white p-5 rounded-lg shadow-md border-2 border-transparent cursor-pointer transition-all duration-300">
+                        <div class="flex items-start">
+                             <div class="flex-shrink-0">
+                                <div class="step-number w-10 h-10 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold text-lg transition-colors">4</div>
+                            </div>
+                            <div class="ml-4 flex-grow step-card-content">
+                                <h3 class="text-lg font-semibold text-slate-800" data-translate-key="step4Title">Re-apply for Private Insurance</h3>
+                                <p class="text-slate-600 mt-1" data-translate-key="step4Desc">As soon as you have confirmation from AOK that your membership will end, secure new private insurance. Do NOT have a gap in coverage.</p>
+                                <ul class="list-disc list-inside mt-2 text-slate-600 space-y-1">
+                                    <li data-translate-key="step4li1">Contact Care Concept (or another private insurer for students like Mawista, HanseMerkur, etc.).</li>
+                                    <li data-translate-key="step4li2">Explain your situation: you were a member, had a short-term job, and now need to resume your student insurance.</li>
+                                    <li data-translate-key="step4li3">You will need your FSP enrollment certificate (`Immatrikulationsbescheinigung`).</li>
+                                    <li data-translate-key="step4li4">Get the insurance confirmation document (`Versicherungsnachweis`) needed for the residence permit.</li>
+                                </ul>
+                            </div>
+                             <div class="completion-check ml-4">
+                                <span class="text-3xl text-emerald-600">✓</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 5 -->
+                     <div class="step-card bg-white p-5 rounded-lg shadow-md border-2 border-transparent cursor-pointer transition-all duration-300">
+                        <div class="flex items-start">
+                             <div class="flex-shrink-0">
+                                <div class="step-number w-10 h-10 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold text-lg transition-colors">5</div>
+                            </div>
+                            <div class="ml-4 flex-grow step-card-content">
+                                <h3 class="text-lg font-semibold text-slate-800" data-translate-key="step5Title">Apply for Your Residence Permit</h3>
+                                <p class="text-slate-600 mt-1" data-translate-key="step5Desc">With proof of health insurance, you can proceed with your residence permit application at the Foreigners' Office (`Ausländerbehörde`) in Magdeburg.</p>
+                                <ul class="list-disc list-inside mt-2 text-slate-600 space-y-1">
+                                    <li data-translate-key="step5li1">Book an appointment immediately. Do not wait.</li>
+                                    <li data-translate-key="step5li2">Prepare all required documents: passport, application form, biometric photo, proof of finance, FSP enrollment, rental contract, and your new health insurance certificate.</li>
+                                    <li data-translate-key="step5li3">Go to your appointment and submit your application. Your valid application will secure your legal status even if the visa expires while they process it.</li>
+                                </ul>
+                            </div>
+                             <div class="completion-check ml-4">
+                                <span class="text-3xl text-emerald-600">✓</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="explanation" class="scroll-mt-24">
+                 <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4" data-translate-key="whyTitle">Why Did This Happen? Understanding German Law</h2>
+                    <p class="text-slate-600" data-translate-key="whySubtitle">The German social security system can be confusing. This situation wasn't anyone's fault, but rather the result of specific rules being automatically applied. Understanding these rules can help reduce confusion and stress.</p>
+                    <div class="mt-6 grid md:grid-cols-2 gap-6">
+                        <div class="bg-sky-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-sky-900" data-translate-key="whyBox1Title">Mandatory Public Insurance Rule</h3>
+                            <p class="text-sky-800 mt-1" data-translate-key="whyBox1Desc">In Germany, if you have a job that pays above a certain threshold (a "Minijob" limit of €538/month), you are automatically required to have public health insurance. Your 20-hour/week contract likely put you over this limit. Your employer was legally obligated to register you.</p>
+                        </div>
+                        <div class="bg-amber-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-amber-900" data-translate-key="whyBox2Title">The "Continuation" Rule</h3>
+                            <p class="text-amber-800 mt-1" data-translate-key="whyBox2Desc">Once you are in the public system, you generally stay in. When the reason for your *mandatory* insurance (the job) disappears, the system doesn't kick you out. Instead, it automatically converts your membership to a *voluntary* one (`freiwillige Versicherung`) to ensure you don't become uninsured. This is why AOK will continue to bill you, but at a higher, non-employee rate.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="costs" class="scroll-mt-24">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2 text-center" data-translate-key="costsTitle">Cost Comparison</h2>
+                    <p class="max-w-2xl mx-auto text-center text-slate-600 mb-6" data-translate-key="costsSubtitle">This chart illustrates why it's so important to switch back to private student insurance. The monthly cost difference is significant for a student.</p>
+                    <div class="chart-container">
+                        <canvas id="costChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const translations = {
+                en: {
+                    mainTitle: "Navigating Your Health Insurance & Residency Situation",
+                    mainSubtitle: "An interactive guide to solve your current challenges in Germany.",
+                    navOverview: "Overview",
+                    navActionPlan: "Action Plan",
+                    navExplanation: "Why This Happened",
+                    navCosts: "Cost Comparison",
+                    overviewTitle: "Situation Overview",
+                    overviewSubtitle: "This timeline summarizes the recent events that led to the current situation. Understanding the sequence is the first step to resolving it.",
+                    event1Title: "Private Insurance",
+                    event1Desc: "You were correctly insured with Care Concept as a student in a preparatory course (FSP).",
+                    event2Title: "Part-Time Job Started",
+                    event2Desc: "Your new part-time job (20 hrs/week) legally requires social security contributions, which triggers mandatory public health insurance.",
+                    event3Title: "Employer Registered You in AOK",
+                    event3Desc: "Your employer fulfilled their legal duty by registering you with a public health insurer (AOK).",
+                    event4Title: "Cancelled Private Insurance",
+                    event4Desc: "Following advice, you cancelled your Care Concept policy. This is a critical point.",
+                    event5Title: "Job Ends & AOK Becomes Voluntary",
+                    event5Desc: "With the job ending, your mandatory public insurance converts to a more expensive \"voluntary\" membership, leading to the current problem.",
+                    planTitle: "Your Step-by-Step Action Plan",
+                    planSubtitle: "This is the most important section. Follow these steps in order. This is a complex situation, and acting quickly and correctly is key. Click on a step to mark it as complete.",
+                    step1Title: "IMMEDIATELY Contact AOK",
+                    step1Desc: "This is your highest priority. You need to find out if you are actually registered. The employer might have started the process without completing it.",
+                    step1li1: "<strong>Call or visit an AOK branch in Magdeburg.</strong> Explain your situation: you believe your employer registered you but you never provided information or received documents.",
+                    step1li2: "<strong>Ask for your status:</strong> Are you an active member? Since when?",
+                    step1li3: "<strong>Explain the job is ending immediately.</strong> This is crucial information for them.",
+                    step2Title: "Get Proof of Employment End",
+                    step2Desc: "You need official proof from your employer that the employment relationship is ending. This document is your key to changing your insurance status.",
+                    step2li1: "Request a formal termination letter (`Kündigung`) or a contract termination agreement (`Aufhebungsvertrag`).",
+                    step2li2: "It must clearly state the last day of employment. Since the business is closing, this should be straightforward.",
+                    step2li3: "A written statement from him confirming the business closure and the end of your employment on a specific date is essential.",
+                    step3Title: "Attempt to Cancel AOK Membership",
+                    step3Desc: "Once you have proof the job ended, immediately inform AOK. Your goal is to get out of the \"voluntary\" membership before it really starts.",
+                    step3li1: "Provide AOK with the proof of employment ending.",
+                    step3li2: "State that you are a student in a preparatory course and wish to return to private insurance, as you are no longer eligible for mandatory public insurance.",
+                    step3li3: "There is a special, short-term right to cancel when mandatory insurance ends. Act within two weeks of receiving confirmation from AOK about the status change.",
+                    step4Title: "Re-apply for Private Insurance",
+                    step4Desc: "As soon as you have confirmation from AOK that your membership will end, secure new private insurance. Do NOT have a gap in coverage.",
+                    step4li1: "Contact Care Concept (or another private insurer for students like Mawista, HanseMerkur, etc.).",
+                    step4li2: "Explain your situation: you were a member, had a short-term job, and now need to resume your student insurance.",
+                    step4li3: "You will need your FSP enrollment certificate (`Immatrikulationsbescheinigung`).",
+                    step4li4: "Get the insurance confirmation document (`Versicherungsnachweis`) needed for the residence permit.",
+                    step5Title: "Apply for Your Residence Permit",
+                    step5Desc: "With proof of health insurance, you can proceed with your residence permit application at the Foreigners' Office (`Ausländerbehörde`) in Magdeburg.",
+                    step5li1: "Book an appointment immediately. Do not wait.",
+                    step5li2: "Prepare all required documents: passport, application form, biometric photo, proof of finance, FSP enrollment, rental contract, and your new health insurance certificate.",
+                    step5li3: "Go to your appointment and submit your application. Your valid application will secure your legal status even if the visa expires while they process it.",
+                    whyTitle: "Why Did This Happen? Understanding German Law",
+                    whySubtitle: "The German social security system can be confusing. This situation wasn't anyone's fault, but rather the result of specific rules being automatically applied. Understanding these rules can help reduce confusion and stress.",
+                    whyBox1Title: "Mandatory Public Insurance Rule",
+                    whyBox1Desc: "In Germany, if you have a job that pays above a certain threshold (a \"Minijob\" limit of €538/month), you are automatically required to have public health insurance. Your 20-hour/week contract likely put you over this limit. Your employer was legally obligated to register you.",
+                    whyBox2Title: "The \"Continuation\" Rule",
+                    whyBox2Desc: "Once you are in the public system, you generally stay in. When the reason for your *mandatory* insurance (the job) disappears, a system doesn't kick you out. Instead, it automatically converts your membership to a *voluntary* one (`freiwillige Versicherung`) to ensure you don't become uninsured. This is why AOK will continue to bill you, but at a higher, non-employee rate.",
+                    costsTitle: "Cost Comparison",
+                    costsSubtitle: "This chart illustrates why it's so important to switch back to private student insurance. The monthly cost difference is significant for a student.",
+                    chartLabelAOK: "AOK Voluntary Membership (Est.)",
+                    chartLabelPrivate: "Private Student Insurance (Est.)",
+                },
+                de: {
+                    mainTitle: "Navigation durch Ihre Krankenversicherungs- & Aufenthaltssituation",
+                    mainSubtitle: "Ein interaktiver Leitfaden zur Lösung Ihrer aktuellen Herausforderungen in Deutschland.",
+                    navOverview: "Überblick",
+                    navActionPlan: "Aktionsplan",
+                    navExplanation: "Warum ist das passiert",
+                    navCosts: "Kostenvergleich",
+                    overviewTitle: "Überblick über die Situation",
+                    overviewSubtitle: "Diese Zeitleiste fasst die jüngsten Ereignisse zusammen, die zur aktuellen Situation geführt haben. Das Verständnis der Abfolge ist der erste Schritt zur Lösung.",
+                    event1Title: "Private Versicherung",
+                    event1Desc: "Sie waren korrekt bei Care Concept als Studentin in einem Studienkolleg (FSP) versichert.",
+                    event2Title: "Teilzeitjob begonnen",
+                    event2Desc: "Ihr neuer Teilzeitjob (20 Std./Woche) erfordert gesetzliche Sozialversicherungsbeiträge, was eine obligatorische gesetzliche Krankenversicherung auslöst.",
+                    event3Title: "Arbeitgeber hat Sie bei der AOK angemeldet",
+                    event3Desc: "Ihr Arbeitgeber hat seine gesetzliche Pflicht erfüllt, indem er Sie bei einer gesetzlichen Krankenkasse (AOK) angemeldet hat.",
+                    event4Title: "Private Versicherung gekündigt",
+                    event4Desc: "Auf Anraten haben Sie Ihre Care Concept-Police gekündigt. Dies ist ein entscheidender Punkt.",
+                    event5Title: "Job endet & AOK wird freiwillig",
+                    event5Desc: "Mit dem Ende des Jobs wandelt sich Ihre gesetzliche Pflichtversicherung in eine teurere „freiwillige“ Mitgliedschaft um, was zum aktuellen Problem führt.",
+                    planTitle: "Ihr Schritt-für-Schritt-Aktionsplan",
+                    planSubtitle: "Dies ist der wichtigste Abschnitt. Befolgen Sie diese Schritte der Reihe nach. Dies ist eine komplexe Situation, und schnelles und korrektes Handeln ist entscheidend. Klicken Sie auf einen Schritt, um ihn als erledigt zu markieren.",
+                    step1Title: "SOFORT die AOK kontaktieren",
+                    step1Desc: "Dies hat höchste Priorität. Sie müssen herausfinden, ob Sie tatsächlich registriert sind. Der Arbeitgeber hat den Prozess möglicherweise begonnen, aber nicht abgeschlossen.",
+                    step1li1: "<strong>Rufen Sie an oder besuchen Sie eine AOK-Geschäftsstelle in Magdeburg.</strong> Erklären Sie Ihre Situation: Sie glauben, Ihr Arbeitgeber hat Sie angemeldet, aber Sie haben nie Informationen gegeben oder Unterlagen erhalten.",
+                    step1li2: "<strong>Fragen Sie nach Ihrem Status:</strong> Sind Sie ein aktives Mitglied? Seit wann?",
+                    step1li3: "<strong>Erklären Sie, dass der Job sofort endet.</strong> Dies ist eine entscheidende Information für die AOK.",
+                    step2Title: "Nachweis über das Ende des Arbeitsverhältnisses besorgen",
+                    step2Desc: "Sie benötigen einen offiziellen Nachweis von Ihrem Arbeitgeber, dass das Arbeitsverhältnis endet. Dieses Dokument ist Ihr Schlüssel zur Änderung Ihres Versicherungsstatus.",
+                    step2li1: "Bitten Sie um ein formelles Kündigungsschreiben oder einen Aufhebungsvertrag.",
+                    step2li2: "Es muss den letzten Arbeitstag klar angeben. Da das Geschäft schließt, sollte dies unkompliziert sein.",
+                    step2li3: "Eine schriftliche Erklärung von ihm, die die Schließung des Geschäfts und das Ende Ihrer Anstellung zu einem bestimmten Datum bestätigt, ist unerlässlich.",
+                    step3Title: "Versuch, die AOK-Mitgliedschaft zu kündigen",
+                    step3Desc: "Sobald Sie den Nachweis über das Jobende haben, informieren Sie sofort die AOK. Ihr Ziel ist es, aus der „freiwilligen“ Mitgliedschaft herauszukommen, bevor sie richtig beginnt.",
+                    step3li1: "Legen Sie der AOK den Nachweis über das Ende des Arbeitsverhältnisses vor.",
+                    step3li2: "Geben Sie an, dass Sie Studentin in einem Studienkolleg sind und zur privaten Versicherung zurückkehren möchten, da Sie nicht mehr pflichtversichert sind.",
+                    step3li3: "Es gibt ein besonderes, kurzfristiges Kündigungsrecht, wenn die Pflichtversicherung endet. Handeln Sie innerhalb von zwei Wochen nach Erhalt der Bestätigung von der AOK über die Statusänderung.",
+                    step4Title: "Erneut private Versicherung beantragen",
+                    step4Desc: "Sobald Sie von der AOK die Bestätigung haben, dass Ihre Mitgliedschaft endet, sichern Sie sich eine neue private Versicherung. Es darf KEINE Versicherungslücke geben.",
+                    step4li1: "Kontaktieren Sie Care Concept (oder einen anderen privaten Versicherer für Studenten wie Mawista, HanseMerkur, etc.).",
+                    step4li2: "Erklären Sie Ihre Situation: Sie waren Mitglied, hatten einen kurzfristigen Job und müssen nun Ihre Studentenversicherung wieder aufnehmen.",
+                    step4li3: "Sie benötigen Ihre Immatrikulationsbescheinigung vom FSP.",
+                    step4li4: "Besorgen Sie sich den Versicherungsnachweis, der für die Aufenthaltserlaubnis benötigt wird.",
+                    step5Title: "Aufenthaltserlaubnis beantragen",
+                    step5Desc: "Mit dem Nachweis der Krankenversicherung können Sie Ihren Antrag auf Aufenthaltserlaubnis bei der Ausländerbehörde in Magdeburg stellen.",
+                    step5li1: "Buchen Sie sofort einen Termin. Warten Sie nicht.",
+                    step5li2: "Bereiten Sie alle erforderlichen Unterlagen vor: Reisepass, Antragsformular, biometrisches Foto, Finanzierungsnachweis, Immatrikulation, Mietvertrag und Ihren neuen Versicherungsnachweis.",
+                    step5li3: "Gehen Sie zu Ihrem Termin und reichen Sie Ihren Antrag ein. Ihr gültiger Antrag sichert Ihren legalen Status, auch wenn das Visum während der Bearbeitung abläuft.",
+                    whyTitle: "Warum ist das passiert? Das deutsche Gesetz verstehen",
+                    whySubtitle: "Das deutsche Sozialversicherungssystem kann verwirrend sein. Diese Situation war niemandes Schuld, sondern das Ergebnis automatisch angewandter Regeln. Das Verständnis dieser Regeln kann helfen, Verwirrung und Stress abzubauen.",
+                    whyBox1Title: "Regel zur gesetzlichen Versicherungspflicht",
+                    whyBox1Desc: "Wenn Sie in Deutschland einen Job haben, der über einer bestimmten Schwelle liegt (Minijob-Grenze von 538 €/Monat), sind Sie automatisch verpflichtet, eine gesetzliche Krankenversicherung zu haben. Ihr 20-Stunden/Woche-Vertrag hat Sie wahrscheinlich über diese Grenze gebracht. Ihr Arbeitgeber war gesetzlich verpflichtet, Sie anzumelden.",
+                    whyBox2Title: "Die „Fortsetzungs“-Regel",
+                    whyBox2Desc: "Einmal im gesetzlichen System, bleiben Sie im Allgemeinen drin. Wenn der Grund für Ihre *Pflicht*-Versicherung (der Job) wegfällt, wirft das System Sie nicht raus. Stattdessen wandelt es Ihre Mitgliedschaft automatisch in eine *freiwillige* Versicherung um, um sicherzustellen, dass Sie nicht unversichert sind. Deshalb wird die AOK Ihnen weiterhin Rechnungen stellen, aber zu einem höheren, nicht-arbeitnehmerbezogenen Satz.",
+                    costsTitle: "Kostenvergleich",
+                    costsSubtitle: "Diese Grafik veranschaulicht, warum es so wichtig ist, zur privaten Studentenversicherung zurückzukehren. Der monatliche Kostenunterschied ist für einen Studenten erheblich.",
+                    chartLabelAOK: "AOK Freiwillige Mitgliedschaft (geschätzt)",
+                    chartLabelPrivate: "Private Studentenversicherung (geschätzt)",
+                },
+                ar: {
+                    mainTitle: "دليل شامل لوضع التأمين الصحي والإقامة الخاص بك",
+                    mainSubtitle: "دليل تفاعلي لحل تحدياتك الحالية في ألمانيا.",
+                    navOverview: "نظرة عامة",
+                    navActionPlan: "خطة العمل",
+                    navExplanation: "لماذا حدث هذا؟",
+                    navCosts: "مقارنة التكاليف",
+                    overviewTitle: "نظرة عامة على الوضع",
+                    overviewSubtitle: "يلخص هذا الخط الزمني الأحداث الأخيرة التي أدت إلى الوضع الحالي. فهم التسلسل هو الخطوة الأولى لحل المشكلة.",
+                    event1Title: "تأمين خاص",
+                    event1Desc: "كنتِ مؤمنة بشكل صحيح مع شركة Care Concept كطالبة في دورة تحضيرية (FSP).",
+                    event2Title: "بدء العمل بدوام جزئي",
+                    event2Desc: "وظيفتك الجديدة بدوام جزئي (20 ساعة/أسبوع) تتطلب قانونًا مساهمات في الضمان الاجتماعي، مما يؤدي إلى تفعيل التأمين الصحي العام الإلزامي.",
+                    event3Title: "قام صاحب العمل بتسجيلك في AOK",
+                    event3Desc: "أوفى صاحب العمل بواجبه القانوني بتسجيلك في إحدى شركات التأمين الصحي العام (AOK).",
+                    event4Title: "إلغاء التأمين الخاص",
+                    event4Desc: "بناءً على النصيحة، قمتِ بإلغاء بوليصة Care Concept الخاصة بك. هذه نقطة حاسمة.",
+                    event5Title: "انتهاء الوظيفة وتصبح عضوية AOK طوعية",
+                    event5Desc: "مع انتهاء الوظيفة، يتحول تأمينك العام الإلزامي إلى عضوية \"طوعية\" أكثر تكلفة، مما يؤدي إلى المشكلة الحالية.",
+                    planTitle: "خطة عملك خطوة بخطوة",
+                    planSubtitle: "هذا هو القسم الأكثر أهمية. اتبعي هذه الخطوات بالترتيب. هذا وضع معقد، والتصرف بسرعة وبشكل صحيح هو المفتاح. انقري على أي خطوة لوضع علامة عليها كمكتملة.",
+                    step1Title: "اتصلي بـ AOK فوراً",
+                    step1Desc: "هذه هي أولويتك القصوى. يجب أن تعرفي ما إذا كنتِ مسجلة بالفعل. قد يكون صاحب العمل قد بدأ العملية دون إكمالها.",
+                    step1li1: "<strong>اتصلي أو زوري فرع AOK في ماغدبورغ.</strong> اشرحي وضعك: تعتقدين أن صاحب العمل سجلك ولكنك لم تقدمي أي معلومات أو تستلمي أي وثائق.",
+                    step1li2: "<strong>اسألي عن حالتك:</strong> هل أنتِ عضوة نشطة؟ منذ متى؟",
+                    step1li3: "<strong>اشرحي أن الوظيفة ستنتهي فوراً.</strong> هذه معلومات حاسمة بالنسبة لهم.",
+                    step2Title: "احصلي على إثبات بانتهاء العمل",
+                    step2Desc: "تحتاجين إلى إثبات رسمي من صاحب العمل بأن علاقة العمل تنتهي. هذه الوثيقة هي مفتاحك لتغيير حالة التأمين الخاصة بك.",
+                    step2li1: "اطلبي خطاب إنهاء خدمة رسمي (Kündigung) أو اتفاقية إنهاء عقد (Aufhebungsvertrag).",
+                    step2li2: "يجب أن يذكر بوضوح آخر يوم عمل. بما أن الشركة ستغلق، يجب أن يكون هذا الأمر بسيطًا.",
+                    step2li3: "من الضروري وجود بيان خطي منه يؤكد إغلاق العمل ونهاية توظيفك في تاريخ محدد.",
+                    step3Title: "محاولة إلغاء عضوية AOK",
+                    step3Desc: "بمجرد حصولك على إثبات انتهاء الوظيفة، أبلغي AOK فوراً. هدفك هو الخروج من العضوية \"الطوعية\" قبل أن تبدأ فعليًا.",
+                    step3li1: "قدمي لـ AOK إثبات انتهاء العمل.",
+                    step3li2: "اذكري أنك طالبة في دورة تحضيرية وترغبين في العودة إلى التأمين الخاص، حيث لم تعودي مؤهلة للتأمين العام الإلزامي.",
+                    step3li3: "هناك حق خاص قصير الأجل في الإلغاء عند انتهاء التأمين الإلزامي. تصرفي في غضون أسبوعين من استلام تأكيد من AOK بشأن تغيير الحالة.",
+                    step4Title: "إعادة التقديم للتأمين الخاص",
+                    step4Desc: "بمجرد حصولك على تأكيد من AOK بأن عضويتك ستنتهي، قومي بتأمين تأمين خاص جديد. لا تدعي فجوة في التغطية التأمينية.",
+                    step4li1: "اتصلي بشركة Care Concept (أو أي شركة تأمين خاصة أخرى للطلاب مثل Mawista، HanseMerkur، إلخ).",
+                    step4li2: "اشرحي وضعك: كنتِ عضوة، وكان لديك وظيفة قصيرة الأجل، والآن تحتاجين إلى استئناف تأمين الطالب الخاص بك.",
+                    step4li3: "ستحتاجين إلى شهادة التسجيل في الدورة التحضيرية (Immatrikulationsbescheinigung).",
+                    step4li4: "احصلي على وثيقة تأكيد التأمين (Versicherungsnachweis) اللازمة لتصريح الإقامة.",
+                    step5Title: "التقديم للحصول على تصريح الإقامة",
+                    step5Desc: "مع إثبات التأمين الصحي، يمكنك المتابعة في طلب تصريح الإقامة في مكتب الأجانب (Ausländerbehörde) في ماغدبورغ.",
+                    step5li1: "احجزي موعدًا على الفور. لا تنتظري.",
+                    step5li2: "جهزي جميع المستندات المطلوبة: جواز السفر، نموذج الطلب، صورة بيومترية، إثبات التمويل، شهادة التسجيل في الدورة التحضيرية، عقد الإيجار، وشهادة التأمين الصحي الجديدة.",
+                    step5li3: "اذهبي إلى موعدك وقدمي طلبك. سيضمن طلبك الصالح وضعك القانوني حتى لو انتهت صلاحية التأشيرة أثناء معالجته.",
+                    whyTitle: "لماذا حدث هذا؟ فهم القانون الألماني",
+                    whySubtitle: "يمكن أن يكون نظام الضمان الاجتماعي الألماني مربكًا. لم يكن هذا الوضع خطأ أحد، بل كان نتيجة تطبيق قواعد محددة تلقائيًا. فهم هذه القواعد يمكن أن يساعد في تقليل الارتباك والتوتر.",
+                    whyBox1Title: "قاعدة التأمين العام الإلزامي",
+                    whyBox1Desc: "في ألمانيا، إذا كان لديك وظيفة تزيد أجرتها عن حد معين (حد \"Minijob\" وهو 538 يورو شهريًا)، فأنت مطالب تلقائيًا بالحصول على تأمين صحي عام. من المحتمل أن عقد عملك لمدة 20 ساعة أسبوعيًا قد تجاوز هذا الحد. كان صاحب العمل ملزمًا قانونيًا بتسجيلك.",
+                    whyBox2Title: "قاعدة \"الاستمرارية\"",
+                    whyBox2Desc: "بمجرد دخولك في النظام العام، فإنك تبقى فيه بشكل عام. عندما يختفي سبب تأمينك *الإلزامي* (الوظيفة)، فإن النظام لا يطردك. بدلاً من ذلك، يقوم تلقائيًا بتحويل عضويتك إلى عضوية *طوعية* (freiwillige Versicherung) لضمان عدم بقائك بدون تأمين. هذا هو السبب في أن AOK ستستمر في إرسال الفواتير لك، ولكن بسعر أعلى لغير الموظفين.",
+                    costsTitle: "مقارنة التكاليف",
+                    costsSubtitle: "يوضح هذا الرسم البياني سبب أهمية العودة إلى تأمين الطلاب الخاص. فرق التكلفة الشهري كبير بالنسبة للطالب.",
+                    chartLabelAOK: "عضوية AOK الطوعية (تقديري)",
+                    chartLabelPrivate: "تأمين الطلاب الخاص (تقديري)",
+                }
+            };
+            
+            const languageSelector = document.getElementById('languageSelector');
+            let costChart;
+
+            function setLanguage(lang) {
+                document.documentElement.lang = lang;
+                document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+                document.querySelectorAll('[data-translate-key]').forEach(el => {
+                    const key = el.dataset.translateKey;
+                    if (translations[lang] && translations[lang][key]) {
+                        el.innerHTML = translations[lang][key];
+                    }
+                });
+
+                languageSelector.querySelectorAll('.lang-btn').forEach(btn => {
+                    if (btn.dataset.lang === lang) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                
+                if (costChart) {
+                    costChart.data.labels = [
+                        translations[lang].chartLabelAOK,
+                        translations[lang].chartLabelPrivate
+                    ];
+                    costChart.update();
+                }
+            }
+
+            languageSelector.addEventListener('click', (e) => {
+                if (e.target.matches('.lang-btn')) {
+                    const lang = e.target.dataset.lang;
+                    setLanguage(lang);
+                }
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+
+            const stepCards = document.querySelectorAll('.step-card');
+            stepCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.toggle('completed');
+                });
+            });
+            
+            const ctx = document.getElementById('costChart').getContext('2d');
+            costChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['AOK Voluntary Membership (Est.)', 'Private Student Insurance (Est.)'],
+                    datasets: [{
+                        label: 'Monthly Cost in €',
+                        data: [220, 75],
+                        backgroundColor: [
+                            '#f59e0b', // amber-500
+                            '#0ea5e9'  // sky-500
+                        ],
+                        borderColor: [
+                            '#ffffff',
+                            '#ffffff'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            setLanguage('en');
+        });
+    </script>
+</body>
+</html>
+
